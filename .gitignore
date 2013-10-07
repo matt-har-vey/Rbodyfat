@@ -1,2 +1,8 @@
 .Rapp.history
 weights.csv
+.Rdata
+.Rhistory
+.Rdata
+.Rhistory
+cals.json
+weights.sqlite3
