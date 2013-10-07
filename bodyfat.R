@@ -42,7 +42,6 @@ leanBox <- function(bf = bodyfat, days = 3) {
 }
 
 allPlots <- function(bf = bodyfat) {
-	plot.new()
 	split.screen(c(1,2))
 	screen(1)
   fatBox(bf)
