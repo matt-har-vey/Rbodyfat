@@ -1,6 +1,7 @@
 library('DBI')
 library('rjson')
 library('RSQLite')
+library('lubridate')
 
 sqliteDbd <- dbDriver('SQLite')
 
@@ -41,13 +42,13 @@ leanBox <- function(bf = bodyfat, days = 3) {
 }
 
 allPlots <- function(bf = bodyfat) {
-	dev.new(width = 10, height = 5)
 	plot.new()
 	split.screen(c(1,2))
 	screen(1)
-    fatBox(bf)
+  fatBox(bf)
 	screen(2)
-    leanBox(bf)
+  leanBox(bf)
+  close.screen(all = TRUE)
 }
 
 dayMean <- function(bf = bodyfat, d = 1) {
