@@ -73,9 +73,13 @@ percentT <- function(bf, m = 8) {
   t.test(bf$fat_percent, alternative = "less", mu = m)
 }
 
+toPerWeek <- function(model) {
+  model$coefficients["time"] * 3600 * 24 * 7
+}
+
 poundsPerWeek <- function(bf = bodyfat) {
 	model <- with(bf, lm(weight ~ time))
-	model$coefficients["time"] * 3600 * 24 * 7
+	toPerWeek(model)
 }
 
 targetCals <- function(bf = bodyfat, targetPounds = 0) {
