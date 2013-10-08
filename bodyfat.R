@@ -120,8 +120,23 @@ goalP <- function(lag = 7) {
 linRegPlot <- function(data, column) {
   mdl <- lm(paste(column, "time", sep = " ~ "), data)
   perWeek <- toPerWeek(mdl)
-  plot(data[,"time"], data[,column], ylab = '', xlab = '',
+  x <- data[,"time"]
+  y <- data[,column]
+  
+  split.screen(c(1,2))
+  
+  screen(1)
+  plot(x, y, ylab = '', xlab = '',
        main = sprintf("%s (%.2f)", column, perWeek))
   abline(mdl)
-  mdl
+  
+  screen(2)
+  hist <- hist(y, main = '', xlab = '', ylab = '')
+  
+  close.screen(all = TRUE)
+  
+  list("hist" = hist,
+       "lm" = mdl,
+       "t.test" = t.test(y, alternative = "less"),
+       "summary" = summary(y))
 }
