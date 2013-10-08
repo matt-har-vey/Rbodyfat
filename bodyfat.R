@@ -3,19 +3,24 @@ library('rjson')
 library('RSQLite')
 library('lubridate')
 
-sqliteDbd <- dbDriver('SQLite')
-
 csvData <- function() {
   read.csv('weights.csv', colClasses = c('POSIXct', rep(NA,4)))
 }
 
+sqliteSelect <- function(db, query) {
+  sqliteDbd <- dbDriver('SQLite')
+  con <- dbConnect(sqliteDbd, dbname = db)
+  res <- dbGetQuery(con, query)
+  dbDisconnect(con)
+  res
+}
+
 sqlData <- function(user = 1) {
-  con <- dbConnect(sqliteDbd, dbname = 'weights.sqlite3')
-  d <- transform(dbGetQuery(con, paste("select time, weight, fat_percent from weights where user_id=", user, sep = '')),
+  d <- transform(sqliteSelect('weights.sqlite3',
+                 paste("select time, weight, fat_percent from weights where user_id=", user, sep = '')),
                  time = as.POSIXct(time))
 	d$lean_mass <- (1 - d$fat_percent / 100) * d$weight
 	d$fat_mass <- d$weight - d$lean_mass
-	dbDisconnect(con)
 	d
 }
 
@@ -110,4 +115,13 @@ goalT <- function(lag = 7) {
 
 goalP <- function(lag = 7) {
   goalT(lag)$p.value
+}
+
+linRegPlot <- function(data, column) {
+  mdl <- lm(paste(column, "time", sep = " ~ "), data)
+  perWeek <- toPerWeek(mdl)
+  plot(data[,"time"], data[,column], ylab = '', xlab = '',
+       main = sprintf("%s (%.2f)", column, perWeek))
+  abline(mdl)
+  mdl
 }
