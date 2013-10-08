@@ -144,3 +144,15 @@ linRegPlot <- function(data, column) {
        "t.test" = t.test(y, alternative = "less"),
        "summary" = summary(y))
 }
+
+bfp <- function(days = 10) {
+  linRegPlot(lastDays(days), "fat_percent")
+}
+
+lean <- function(days = 10) {
+  linRegPlot(lastDays(days), "lean_mass")
+}
+
+fat <- function(days = 10) {
+  linRegPlot(lastDays(days), "fat_mass")
+}
