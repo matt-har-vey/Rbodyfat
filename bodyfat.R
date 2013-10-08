@@ -119,6 +119,8 @@ goalP <- function(lag = 7) {
 
 linRegPlot <- function(data, column) {
   mdl <- lm(paste(column, "time", sep = " ~ "), data)
+  rse <- summary(mdl)$sigma
+  
   perWeek <- toPerWeek(mdl)
   x <- data[,"time"]
   y <- data[,column]
@@ -129,6 +131,8 @@ linRegPlot <- function(data, column) {
   plot(x, y, ylab = '', xlab = '',
        main = sprintf("%s (%.2f)", column, perWeek))
   abline(mdl)
+  abline(mdl$coefficients[1] + rse, mdl$coefficients[2], lty = 'dashed')
+  abline(mdl$coefficients[1] - rse, mdl$coefficients[2], lty = 'dashed')
   
   screen(2)
   hist <- hist(y, main = '', xlab = '', ylab = '')
