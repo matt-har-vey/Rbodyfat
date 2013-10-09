@@ -25,7 +25,6 @@ sqlData <- function(user = 1) {
 }
 
 bodyfat <- sqlData()
-recent <- bodyfat[bodyfat$time > as.POSIXct('2013-09-10'),]
 
 lastDays <- function(days, bf = bodyfat) {
   bf[bf$time > (Sys.time() - 3600 * days * 24),]
@@ -59,11 +58,9 @@ dayMean <- function(bf = bodyfat, d = 1) {
 	aggregate(bf, by = list(day=toIntervals(bf$time, days = d)), FUN=mean)[c(1,3,4,5,6)]
 }
 
-bodyfatDaily <- dayMean()
-
 ma <- function(ts, n = 5) { filter(ts, rep(1/n, n), sides = 1) }
 
-plotMovingAverage <- function(bf = bodyfatDaily, n = 5) { plot(na.omit(ma(bf$fat_percent, n))) }
+plotMovingAverage <- function(bf = dayMean(), n = 5) { plot(na.omit(ma(bf$fat_percent, n))) }
 
 readCals <- function() {
   con <- file('cals.json')
