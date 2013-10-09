@@ -138,7 +138,7 @@ linRegPlot <- function(data, column) {
   
   list("hist" = hist,
        "lm" = mdl,
-       "t.test" = t.test(y, alternative = "less"),
+       "t.test" = t.test(y, alternative = "less", mu = mean(y)),
        "summary" = summary(y))
 }
 
@@ -152,4 +152,8 @@ lean <- function(days = 10) {
 
 fat <- function(days = 10) {
   linRegPlot(lastDays(days), "fat_mass")
+}
+
+all <- function(days = 10) {
+  list(bfp = bfp(days), lean = lean(days), fat = fat(days))
 }
