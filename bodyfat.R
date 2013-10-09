@@ -58,6 +58,13 @@ dayMean <- function(bf = bodyfat, d = 1) {
 	aggregate(bf, by = list(day=toIntervals(bf$time, days = d)), FUN=mean)[c(1,3,4,5,6)]
 }
 
+plotDayOfWeek <- function(data = bodyfat, dependent = "fat_percent") {
+  with(data, boxplot(formula(sprintf("%s ~ wday(time)", dependent)),
+                     ylab = 'Body Fat %', main = 'Body Composition by Day of Week', xaxt="n"))
+  axis(1, at = seq(1,7),
+       labels = c("Sun","Mon","Tue","Wed","Thurs","Fri","Sat"))
+}
+
 ma <- function(ts, n = 5) { filter(ts, rep(1/n, n), sides = 1) }
 
 plotMovingAverage <- function(bf = dayMean(), n = 5) { plot(na.omit(ma(bf$fat_percent, n))) }
