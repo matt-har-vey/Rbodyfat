@@ -95,8 +95,8 @@ targetCals <- function(bf = bodyfat, targetPounds = 0) {
   s <- min(bf$time)
   e <- max(bf$time)
 	cals <- readCals()
-  cals <- cals[cals$cals > 0 & cals$date >= s & cals$date <= e,]
-  mean(cals$cals) - 500 * poundsPerWeek(bf) / 7 + 500 * targetPounds
+  cals <- cals[cals$cals > 200 & cals$date >= s & cals$date <= e,]
+  mean(cals$cals) - 500 * poundsPerWeek(bf) + 500 * targetPounds
 }
 
 pVals <- function(lags = seq(1,7)) {
