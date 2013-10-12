@@ -155,18 +155,17 @@ percentT <- function(bf, m = 8) {
   t.test(bf$fat_percent, alternative = "less", mu = m)
 }
 
-pVals <- function(lags = seq(1,7)) {
-  unlist(lapply(lags, function(l) { percentT(lastDays(l))$p.value }))
+pVals <- function(lags = seq(2,9)) {
+  unlist(lapply(lags, function(l) { goalT(l)$p.value }))
 }
 
-pPlot <- function(lags = seq(1,7)) {
-  x <- pVals(lags)
-  plot(x, xlab = '', ylab = '', ylim = c(0,1))
+pPlot <- function(lags = seq(2,9)) {
+  plot(pVals(lags), xlab = '', ylab = '', ylim = c(0,1))
   abline(0.05, 0, lty = "dashed")
 }
 
 goalT <- function(lag = 7) {
-  t.test(dayMeans(lastDays(lag))$fat_percent, mu = 8, alternative = "less")
+  t.test(tail(dayMeans()$fat_percent, lag), mu = 8, alternative = "less")
 }
 
 goalP <- function(lag = 7) {
