@@ -4,6 +4,6 @@ weights.csv
 .Rhistory
 .RData
 .Rhistory
-cals.json
+*.json
 weights.sqlite3
 .Rproj.user
