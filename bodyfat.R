@@ -4,65 +4,7 @@ library('RSQLite')
 library('lubridate')
 library('stringr')
 
-csvData <- function() {
-  read.csv('weights.csv', colClasses = c('POSIXct', rep(NA,4)))
-}
 
-sqliteSelect <- function(db, query) {
-  sqliteDbd <- dbDriver('SQLite')
-  con <- dbConnect(sqliteDbd, dbname = db)
-  res <- dbGetQuery(con, query)
-  dbDisconnect(con)
-  res
-}
-
-sqlData <- function(user = 1) {
-  d <- transform(sqliteSelect('weights.sqlite3',
-                 paste("select time, weight, fat_percent from weights where user_id=", user, sep = '')),
-                 time = as.POSIXct(time, tz="UTC"))
-	d$lean_mass <- (1 - d$fat_percent / 100) * d$weight
-	d$fat_mass <- d$weight - d$lean_mass
-	d
-}
-
-mfpDataFrame <- function() {
-  mfpDateTotal <- function(filename) {
-    colname <- tolower(str_extract(filename, "[A-Za-z_]+"))
-    con <- file(filename)
-    j <- fromJSON(readLines(con, warn = FALSE))
-    close(con)
-    date <- as.POSIXct(sapply(j$data, function(l) { l$date }), format = '%m/%d')
-    frame <- as.data.frame(date)
-    frame[frame$date > now(),] <- frame[frame$date > now(),] - dyears(1)
-    frame$date <- as.Date(frame$date)
-    frame[colname] <- as.numeric(sapply(j$data, function(l) { l$total }))
-    frame[frame[colname] == 0,][colname] <- NA
-    frame
-  }
-  
-  mergeAll <- function(dataFrames, merged = NULL) {
-    if (length(dataFrames) == 0) {
-      merged
-    } else {
-      f <- dataFrames[1]
-      rest <- dataFrames[-1]
-      if (is.null(merged)) {
-        mergeAll(rest, f)
-      } else {
-        mergeAll(rest, merge(merged, f, by=c("date")))
-      }
-    }
-  }
-  
-  mfp <- mergeAll(lapply(c('Calories.json', 'Net_Calories.json',
-                           'Carbs.json', 'Protein.json', 'Fat.json',
-                           'Sugar.json', 'Fiber.json',
-                           'Sodium.json', 'Potassium.json'),
-                         mfpDateTotal))
-  mfp <- mfp[!is.na(mfp$calories),]
-  row.names(mfp) <- NULL
-  mfp
-}
 
 lastDays <- function(days, bf = bodyfat, skip = 0) {
   bf[bf$time >= now() - ddays(days + skip) & bf$time <= now() - ddays(skip),]
@@ -80,34 +22,101 @@ dayMeans <- function(bf = bodyfat) {
             mean)
 }
 
-scaleDiffs <- function(df, lag = 3) {
-  firstFrame <- data.frame(df[1:(dim(df)[1] - lag),1])
-  names(firstFrame) <- c(names(df)[1])
-  diffFrame <- data.frame(diff(as.matrix(df[,-1]), lag = lag))
-  names(diffFrame) <- sapply(names(diffFrame), function (n) { paste("diff_", n, sep = '') })
-  cbind(firstFrame, diffFrame)
+prettyHist <- function(x, ...) {
+  h <- hist(x, ylim = c(0,1), prob = TRUE, main = '', ...)
+  lines(density(x))
+  rug(x)
+  h
 }
 
 
 
-bodyfat <- sqlData()
-mfp <- mfpDataFrame()
-jdf <- merge(mfp, dayMeans(bodyfat))
+readData <- function() {
+  sqlData <- function(user = 1) {
+    sqliteSelect <- function(db, query) {
+      sqliteDbd <- dbDriver('SQLite')
+      con <- dbConnect(sqliteDbd, dbname = db)
+      res <- dbGetQuery(con, query)
+      dbDisconnect(con)
+      res
+    }
+    
+    d <- transform(sqliteSelect('weights.sqlite3',
+                                paste("select time, weight, fat_percent from weights where user_id=", user, sep = '')),
+                   time = as.POSIXct(time, tz="UTC"))
+    d$lean_mass <- (1 - d$fat_percent / 100) * d$weight
+    d$fat_mass <- d$weight - d$lean_mass
+    d
+  }
+  
+  mfpDataFrame <- function() {
+    mfpDateTotal <- function(filename) {
+      colname <- tolower(str_extract(filename, "[A-Za-z_]+"))
+      con <- file(filename)
+      j <- fromJSON(readLines(con, warn = FALSE))
+      close(con)
+      date <- as.POSIXct(sapply(j$data, function(l) { l$date }), format = '%m/%d')
+      frame <- as.data.frame(date)
+      frame[frame$date > now(),] <- frame[frame$date > now(),] - dyears(1)
+      frame$date <- as.Date(frame$date)
+      frame[colname] <- as.numeric(sapply(j$data, function(l) { l$total }))
+      frame[frame[colname] == 0,][colname] <- NA
+      frame
+    }
+    
+    mergeAll <- function(dataFrames, merged = NULL) {
+      if (length(dataFrames) == 0) {
+        merged
+      } else {
+        f <- dataFrames[1]
+        rest <- dataFrames[-1]
+        if (is.null(merged)) {
+          mergeAll(rest, f)
+        } else {
+          mergeAll(rest, merge(merged, f, by=c("date")))
+        }
+      }
+    }
+    
+    mfp <- mergeAll(lapply(c('Calories.json', 'Net_Calories.json',
+                             'Carbs.json', 'Protein.json', 'Fat.json',
+                             'Sugar.json', 'Fiber.json',
+                             'Sodium.json', 'Potassium.json'),
+                           mfpDateTotal))
+    mfp <- mfp[!is.na(mfp$calories),]
+    row.names(mfp) <- NULL
+    mfp
+  }
+    
+  bodyfat <<- sqlData()
+  mfp <<- mfpDataFrame()
+  jdf <<- merge(mfp, dayMeans(bodyfat))
+}
 
 
 
-toIntervals <- function(times, days) {
+scaleDiffs <- function(df, lag = 3) {
+  firstFrame <- data.frame(df[1:(dim(df)[1] - lag),1])
+  names(firstFrame) <- c(names(df)[1])
+  diffFrame <- data.frame(diff(as.matrix(df[,c("weight", "fat_percent", "fat_mass", "lean_mass")]), lag = lag))
+  names(diffFrame) <- sapply(names(diffFrame), function (n) { paste("diff_", n, sep = '') })
+  cbind(firstFrame, diffFrame)
+}
+  
+
+
+floorTimes <- function(times, days) {
 	length <- days * 3600 * 24
 	as.Date(as.POSIXct(length * (as.double(times) %/% length), origin = "1970-01-01"))
 }
 
 fatBox <- function(bf = bodyfat, days = 3) {
-	with(bf, boxplot(fat_percent ~ toIntervals(time, days)))
+	with(bf, boxplot(fat_percent ~ floorTimes(time, days)))
 	title('Body Fat %')
 }
 
 leanBox <- function(bf = bodyfat, days = 3) {
-	with(bf, boxplot(lean_mass ~ toIntervals(time, days)))
+	with(bf, boxplot(lean_mass ~ floorTimes(time, days)))
 	title('Lean Mass')
 }
 
@@ -155,11 +164,11 @@ percentT <- function(bf, m = 8) {
   t.test(bf$fat_percent, alternative = "less", mu = m)
 }
 
-pVals <- function(lags = seq(2,9)) {
+pVals <- function(lags = seq(2,12)) {
   unlist(lapply(lags, function(l) { goalT(l)$p.value }))
 }
 
-pPlot <- function(lags = seq(2,9)) {
+pPlot <- function(lags = seq(2,12)) {
   plot(pVals(lags), xlab = '', ylab = '', ylim = c(0,1))
   abline(0.05, 0, lty = "dashed")
 }
