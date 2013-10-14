@@ -160,7 +160,7 @@ poundsPerWeek <- function(dfFitbit = fitbit) {
 meanNetCals <- function(dfFitbit = fitbit) {
   s <- pacificDate(min(dfFitbit$time))
   e <- pacificDate(max(dfFitbit$time))
-  mean(mfp$net_calories[mfp$date >= s & mfp$date <= e])
+  mean(food$net_calories[food$date >= s & food$date <= e])
 }
 
 targetCals <- function(dfFitbit = fitbit, targetPounds = 0) {
