@@ -30,9 +30,13 @@ prettyHist <- function(x, ...) {
 }
 
 maDiff <- function(x) {
- filterCoeff <- 1/3*c(0,1,1,1,0,0,0,0,0)-1/8*c(0,1,1,1,1,1,1,1,1)
- padded <- c(x, rep(x[length(x)], rep(x[1], 4), length(filterCoeff)))
- filter(as.ts(padded), filterCoeff, method = "conv", sides = 2, circular = TRUE)[1:length(x)]
+ filterCoeff <- 1/6*c(0,1,2,3,0,0,0,0,0)-1/8*c(0,1,1,1,1,1,1,1,1)
+ xFirst <- x[1]
+ xLast <- x[length(x)]
+ padLength <- 20
+ padded <- c(rep(xFirst, padLength), x, rep(xLast, padLength))
+ filter(padded, filterCoeff, method = "conv", sides = 2)[(padLength + 1):(padLength + length(x))]
+ 
 }
 
 
