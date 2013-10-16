@@ -185,7 +185,7 @@ percentT <- function(dfFitbit, m = 8) {
 }
 
 pVals <- function(lags = seq(2,12)) {
-  unlist(lapply(lags, function(l) { goalT(l)$p.value }))
+  unlist(lapply(lags, goalP))
 }
 
 pPlot <- function(lags = seq(2,12)) {
@@ -194,17 +194,17 @@ pPlot <- function(lags = seq(2,12)) {
 }
 
 goalT <- function(lag = 7) {
-  futureGoalT()
+  futureGoalT(lag = lag)
 }
 
-futureGoalT <- function(...) {
+futureGoalT <- function(..., lag = 7) {
   px <- c(...)
-  x <- c(tail(dayMeans()$fat_percent,7-length(px)), px)
+  x <- c(tail(dayMeans()$fat_percent, lag - length(px)), px)
   list(x = x, t.test = t.test(x, alt = "less", mu = 8))
 }
 
 goalP <- function(lag = 7) {
-  goalT(lag)$p.value
+  goalT(lag)$t.test$p.value
 }
 
 
