@@ -38,21 +38,29 @@ maDiff <- function(x) {
 
 
 readData <- function() {
+  sqliteSelect <- function(db, query) {
+    sqliteDbd <- dbDriver('SQLite')
+    con <- dbConnect(sqliteDbd, dbname = db)
+    res <- dbGetQuery(con, query)
+    dbDisconnect(con)
+    res
+  }
+  
+  weightsFile <- 'weights.sqlite3'
+  
   fitbitDataFrame <- function(user = 1) {
-    sqliteSelect <- function(db, query) {
-      sqliteDbd <- dbDriver('SQLite')
-      con <- dbConnect(sqliteDbd, dbname = db)
-      res <- dbGetQuery(con, query)
-      dbDisconnect(con)
-      res
-    }
-    
-    d <- transform(sqliteSelect('weights.sqlite3',
+    d <- transform(sqliteSelect(weightsFile,
                                 paste("select time, weight, fat_percent from weights where user_id=", user, sep = '')),
                    time = as.POSIXct(time, tz="UTC"))
     d$lean_mass <- (1 - d$fat_percent / 100) * d$weight
     d$fat_mass <- d$weight - d$lean_mass
     d
+  }
+  
+  viewsDataFrame <- function(user = 1) {
+    transform(sqliteSelect(weightsFile,
+                           paste("select viewed_at, aggregation from views where user_id=", user, sep = '')),
+              viewed_at = as.POSIXct(viewed_at, tz="UTC"))
   }
   
   mfpDataFrame <- function() {
@@ -97,6 +105,7 @@ readData <- function() {
   fitbit <<- fitbitDataFrame()
   food <<- mfpDataFrame()
   fitbitAndFood <<- merge(food, dayMeans(fitbit))
+  views <<- viewsDataFrame()
 }
 
 
@@ -182,6 +191,12 @@ pPlot <- function(lags = seq(2,12)) {
 
 goalT <- function(lag = 7) {
   t.test(tail(dayMeans()$fat_percent, lag), mu = 8, alternative = "less")
+}
+
+futureGoalT <- function(...) {
+  px <- c(...)
+  x <- c(tail(dayMeans()$fat_percent,7-length(px)), px)
+  list(x = x, t.test = t.test(x, alt = "less", mu = 8))
 }
 
 goalP <- function(lag = 7) {
