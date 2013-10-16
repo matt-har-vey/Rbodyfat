@@ -59,7 +59,7 @@ readData <- function() {
   
   viewsDataFrame <- function(user = 1) {
     transform(sqliteSelect(weightsFile,
-                           paste("select viewed_at, aggregation from views where user_id=", user, sep = '')),
+                           paste("select viewed_at, ifnull(aggregation, 'none') as aggregation from views where user_id=", user, sep = '')),
               viewed_at = as.POSIXct(viewed_at, tz="UTC"))
   }
   
@@ -190,7 +190,7 @@ pPlot <- function(lags = seq(2,12)) {
 }
 
 goalT <- function(lag = 7) {
-  t.test(tail(dayMeans()$fat_percent, lag), mu = 8, alternative = "less")
+  futureGoalT()
 }
 
 futureGoalT <- function(...) {
