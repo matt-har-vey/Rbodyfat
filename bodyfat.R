@@ -189,7 +189,7 @@ pVals <- function(lags = seq(2,12)) {
 }
 
 pPlot <- function(lags = seq(2,12)) {
-  plot(pVals(lags), xlab = '', ylab = '', ylim = c(0,1))
+  plot(lags, pVals(lags), xlab = '', ylab = '', ylim = c(0,1))
   abline(0.05, 0, lty = "dashed")
 }
 
