@@ -1,10 +1,8 @@
 library('DBI')
-library('rjson')
 library('RSQLite')
 library('lubridate')
 library('stringr')
-
-
+library('xts')
 
 lastDays <- function(days, dfFitbit = fitbit, skip = 0) {
   dfFitbit[dfFitbit$time >= now() - ddays(days + skip) & dfFitbit$time <= now() - ddays(skip),]
@@ -68,42 +66,8 @@ readData <- function() {
   }
   
   mfpDataFrame <- function() {
-    mfpDateTotal <- function(filename) {
-      colname <- tolower(str_extract(filename, "[A-Za-z_]+"))
-      con <- file(filename)
-      j <- fromJSON(readLines(con, warn = FALSE))
-      close(con)
-      date <- as.POSIXct(sapply(j$data, function(l) { l$date }), format = '%m/%d')
-      frame <- as.data.frame(date)
-      frame[frame$date > now(),] <- frame[frame$date > now(),] - dyears(1)
-      frame$date <- as.Date(frame$date)
-      frame[colname] <- as.numeric(sapply(j$data, function(l) { l$total }))
-      frame[frame[colname] == 0,][colname] <- NA
-      frame
-    }
-    
-    mergeAll <- function(dataFrames, merged = NULL) {
-      if (length(dataFrames) == 0) {
-        merged
-      } else {
-        f <- dataFrames[1]
-        rest <- dataFrames[-1]
-        if (is.null(merged)) {
-          mergeAll(rest, f)
-        } else {
-          mergeAll(rest, merge(merged, f, by=c("date")))
-        }
-      }
-    }
-    
-    mfp <- mergeAll(lapply(c('Calories.json', 'Net_Calories.json',
-                             'Carbs.json', 'Protein.json', 'Fat.json',
-                             'Sugar.json', 'Fiber.json',
-                             'Sodium.json', 'Potassium.json'),
-                           mfpDateTotal))
-    mfp <- mfp[!is.na(mfp$calories),]
-    row.names(mfp) <- NULL
-    mfp
+    transform(sqliteSelect(weightsFile, "select * from food_intakes order by date"),
+              date = as.Date(date))
   }
     
   fitbit <<- fitbitDataFrame()
